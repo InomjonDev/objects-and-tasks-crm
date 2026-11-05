@@ -1,0 +1,7 @@
+.env*
+.local/
+.supabase/
+.git/
+node_modules/
+.yarn/
+supabase/.temp/

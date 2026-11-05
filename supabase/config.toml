@@ -38,3 +38,7 @@ enabled = false
 enabled = false
 [analytics]
 enabled = false
+
+[functions.create-staff]
+# The function verifies the bearer token with Auth and checks profiles.role itself.
+verify_jwt = false

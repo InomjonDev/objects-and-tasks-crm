@@ -9,10 +9,11 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "test": "node --test src/workflow.test.ts",
+    "test": "node --test src/*.test.ts supabase/functions/create-staff/*.test.ts",
     "test:db": "node scripts/test-database.mjs",
     "test:api": "node --env-file-if-exists=.env.admin scripts/test-api.mjs",
-    "seed:demo": "node --env-file-if-exists=.env.admin scripts/seed-demo.mjs"
+    "seed:demo": "node --env-file-if-exists=.env.admin scripts/seed-demo.mjs",
+    "test:staff": "node --env-file-if-exists=.env.admin scripts/test-staff.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

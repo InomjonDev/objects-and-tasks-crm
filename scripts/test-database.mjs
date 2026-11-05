@@ -85,7 +85,7 @@ try {
   ])
   started = true
   succeeds(`create role anon; create role authenticated; create role service_role bypassrls;
-    create schema auth; create table auth.users(id uuid primary key);
+    create schema auth; create table auth.users(id uuid primary key, email text, created_at timestamptz not null default now(), raw_app_meta_data jsonb not null default '{}');
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth, public to anon, authenticated, service_role;`)
   for (const file of readdirSync("supabase/migrations")
@@ -93,11 +93,39 @@ try {
     .sort()) {
     succeeds(readFileSync(`supabase/migrations/${file}`, "utf8"))
   }
-  succeeds(`insert into auth.users values ('${manager}'), ('${executor}'), ('${other}'), ('${secondManager}');
+  succeeds(`insert into auth.users(id) values ('${manager}'), ('${executor}'), ('${other}'), ('${secondManager}');
     insert into public.profiles values ('${manager}', 'Manager', 'manager'), ('${executor}', 'Executor A', 'executor'), ('${other}', 'Executor B', 'executor'), ('${secondManager}', 'Manager B', 'manager');
     insert into public.projects(id,name,address) values ('${project}', 'Shared', 'Address'), ('${hiddenProject}', 'Hidden', 'Address');
     ${states.map((status, index) => `insert into public.tasks(id,title,project_id,assignee_id,status,author_id) values ('${taskId(index)}','Task','${project}','${executor}','${status}','${manager}');`).join("\n")}
     insert into public.task_history(task_id,actor_id,to_status) values ('${taskId(0)}','${manager}','new');`)
+  succeeds(
+    `select public.update_profile('Updated name'); do $$ begin if (select display_name from public.profiles where id=auth.uid()) <> 'Updated name' then raise exception 'Profile not updated'; end if; if (select role from public.profiles where id=auth.uid()) <> 'executor' then raise exception 'Role changed'; end if; end $$`,
+    executor
+  )
+  rejects(`select public.update_profile(' ')`, executor)
+  rejects(`select public.update_profile(repeat('a',121))`, manager)
+  rejects(`set role anon; select public.update_profile('Forged')`)
+  assert.equal(
+    succeeds(`select count(*) from public.list_staff()`, manager),
+    "4"
+  )
+  rejects(`select * from public.list_staff()`, executor)
+  rejects(`set role anon; select * from public.list_staff()`)
+  succeeds(
+    `begin; insert into auth.users(id,email,raw_app_meta_data) values ('10000000-0000-0000-0000-000000000005','new@example.com','{"crm_role":"executor","crm_display_name":"New staff"}'); do $$ begin if not exists(select 1 from public.profiles where id='10000000-0000-0000-0000-000000000005' and role='executor') then raise exception 'Staff profile missing'; end if; end $$; rollback;`
+  )
+  rejects(
+    `insert into auth.users(id,raw_app_meta_data) values ('10000000-0000-0000-0000-000000000006','{"crm_role":"admin","crm_display_name":"Forged"}')`
+  )
+  assert.equal(
+    succeeds(
+      `select count(*) from auth.users where id='10000000-0000-0000-0000-000000000006'`
+    ),
+    "0"
+  )
+  succeeds(
+    `begin; insert into auth.users(id) values ('10000000-0000-0000-0000-000000000007'); update auth.users set raw_app_meta_data='{"crm_role":"executor","crm_display_name":"Late metadata"}' where id='10000000-0000-0000-0000-000000000007'; do $$ begin if not exists(select 1 from public.profiles where id='10000000-0000-0000-0000-000000000007' and role='executor') then raise exception 'Late profile missing'; end if; end $$; update auth.users set raw_app_meta_data='{"crm_role":"manager","crm_display_name":"Do not reset"}' where id='10000000-0000-0000-0000-000000000007'; do $$ begin if not exists(select 1 from public.profiles where id='10000000-0000-0000-0000-000000000007' and role='executor' and display_name='Late metadata') then raise exception 'Existing role/name changed'; end if; end $$; rollback;`
+  )
   for (const [index, from] of states.entries()) {
     for (const to of states) {
       for (const actor of [manager, executor, other, secondManager]) {

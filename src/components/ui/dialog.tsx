@@ -1,5 +1,7 @@
 "use client"
 
+import { useI18n } from "@/i18n"
+
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
@@ -47,6 +49,8 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const { t } = useI18n()
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -71,7 +75,7 @@ function DialogContent({
             }
           >
             <XIcon />
-            <span className="sr-only">Закрыть</span>
+            <span className="sr-only">{t("Закрыть")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>

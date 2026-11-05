@@ -93,6 +93,17 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      update_profile: { Args: { p_display_name: string }; Returns: undefined }
+      list_staff: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          display_name: string
+          role: "manager" | "executor"
+          email: string
+          created_at: string
+        }[]
+      }
       save_project: {
         Args: { p_id: string | null; p_name: string; p_address: string }
         Returns: string

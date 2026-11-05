@@ -13,7 +13,14 @@ const AuthContext = createContext<{
   profile: Profile | null
   loading: boolean
   error: string
-}>({ session: null, profile: null, loading: true, error: "" })
+  refreshProfile: () => Promise<void>
+}>({
+  session: null,
+  profile: null,
+  loading: true,
+  error: "",
+  refreshProfile: async () => {},
+})
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
@@ -24,9 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return
     let active = true
     let sequence = 0
+    let identity: string | null | undefined
     const receive = (next: Session | null) => {
-      const request = ++sequence
       setSession(next)
+      const nextIdentity = next?.user.id ?? null
+      if (nextIdentity === identity) return
+      identity = nextIdentity
+      const request = ++sequence
       setProfile(null)
       setError("")
       if (!next) {
@@ -66,8 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe()
     }
   }, [])
+  async function refreshProfile() {
+    if (!session) return
+    const { data, error: failure } = await supabase!
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single()
+    if (failure) throw failure
+    setProfile((current) => (current?.id === data.id ? data : current))
+  }
   return (
-    <AuthContext.Provider value={{ session, profile, loading, error }}>
+    <AuthContext.Provider
+      value={{ session, profile, loading, error, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n"
 import { useState, type FormEvent, type ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -17,17 +18,20 @@ import { supabase, errorMessage, type Project, type Task } from "./supabase"
 import { useWorkspace } from "./workspace"
 
 export function ErrorNotice({ children }: { children: ReactNode }) {
+  const { t } = useI18n()
   return children ? (
     <p
       role="alert"
       className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"
     >
-      {children}
+      {typeof children === "string" ? t(children) : children}
     </p>
   ) : null
 }
 
 export function ProjectEditor({ project }: { project?: Project }) {
+  const { t } = useI18n()
+
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -67,44 +71,44 @@ export function ProjectEditor({ project }: { project?: Project }) {
       <DialogTrigger
         render={<Button variant={project ? "outline" : "default"} />}
       >
-        {project ? "Редактировать объект" : "Создать объект"}
+        {project ? t("Редактировать объект") : t("Создать объект")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {project ? "Редактировать объект" : "Новый объект"}
+            {project ? t("Редактировать объект") : t("Новый объект")}
           </DialogTitle>
           <DialogDescription>
-            Название стройки и адрес для вашей команды.
+            {t("Название стройки и адрес для вашей команды.")}{" "}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="space-y-5">
           <fieldset disabled={busy} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="project-name">Название</Label>
+              <Label htmlFor="project-name">{t("Название")}</Label>
               <Input
                 id="project-name"
                 name="name"
                 required
                 maxLength={200}
                 defaultValue={project?.name}
-                placeholder="ЖК «Солнечный»"
+                placeholder={t("ЖК «Солнечный»")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-address">Адрес</Label>
+              <Label htmlFor="project-address">{t("Адрес")}</Label>
               <Input
                 id="project-address"
                 name="address"
                 required
                 maxLength={500}
                 defaultValue={project?.address}
-                placeholder="ул. Строителей, 12"
+                placeholder={t("ул. Строителей, 12")}
               />
             </div>
             <ErrorNotice>{error}</ErrorNotice>
             <Button type="submit" className="w-full">
-              {busy ? "Сохраняем…" : "Сохранить объект"}
+              {busy ? t("Сохраняем…") : t("Сохранить объект")}
             </Button>
           </fieldset>
         </form>
@@ -120,6 +124,8 @@ export function TaskEditor({
   task?: Task
   projectId: string
 }) {
+  const { t } = useI18n()
+
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -160,21 +166,21 @@ export function TaskEditor({
       }}
     >
       <DialogTrigger render={<Button variant={task ? "outline" : "default"} />}>
-        {task ? "Редактировать задачу" : "Создать задачу"}
+        {task ? t("Редактировать задачу") : t("Создать задачу")}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {task ? "Редактировать задачу" : "Новая задача"}
+            {task ? t("Редактировать задачу") : t("Новая задача")}
           </DialogTitle>
           <DialogDescription>
-            Укажите работу, объект и ответственного исполнителя.
+            {t("Укажите работу, объект и ответственного исполнителя.")}{" "}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save}>
           <fieldset disabled={busy} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="task-title">Название</Label>
+              <Label htmlFor="task-title">{t("Название")}</Label>
               <Input
                 id="task-title"
                 name="title"
@@ -184,7 +190,7 @@ export function TaskEditor({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="task-description">Описание</Label>
+              <Label htmlFor="task-description">{t("Описание")}</Label>
               <Textarea
                 id="task-description"
                 name="description"
@@ -194,7 +200,7 @@ export function TaskEditor({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="task-project">Объект</Label>
+              <Label htmlFor="task-project">{t("Объект")}</Label>
               <NativeSelect
                 id="task-project"
                 name="project"
@@ -210,7 +216,7 @@ export function TaskEditor({
               </NativeSelect>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="task-assignee">Исполнитель</Label>
+              <Label htmlFor="task-assignee">{t("Исполнитель")}</Label>
               <NativeSelect
                 id="task-assignee"
                 name="assignee"
@@ -219,7 +225,7 @@ export function TaskEditor({
                 className="w-full"
               >
                 <NativeSelectOption value="" disabled>
-                  Выберите исполнителя
+                  {t("Выберите исполнителя")}{" "}
                 </NativeSelectOption>
                 {executors.map((profile) => (
                   <NativeSelectOption key={profile.id} value={profile.id}>
@@ -230,7 +236,7 @@ export function TaskEditor({
             </div>
             {!executors.length && (
               <p className="text-sm text-muted-foreground">
-                Администратор должен добавить исполнителей.
+                {t("Администратор должен добавить исполнителей.")}{" "}
               </p>
             )}
             <ErrorNotice>{error}</ErrorNotice>
@@ -239,7 +245,7 @@ export function TaskEditor({
               disabled={!executors.length}
               className="w-full"
             >
-              {busy ? "Сохраняем…" : "Сохранить задачу"}
+              {busy ? t("Сохраняем…") : t("Сохранить задачу")}
             </Button>
           </fieldset>
         </form>
@@ -257,12 +263,14 @@ export function DeleteRecord({
   id: string
   after: string
 }) {
+  const { t } = useI18n()
+
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const { refresh } = useWorkspace()
   const navigate = useNavigate()
-  const label = kind === "project" ? "Удалить объект" : "Удалить задачу"
+  const label = kind === "project" ? t("Удалить объект") : t("Удалить задачу")
   async function remove() {
     setBusy(true)
     setError("")
@@ -301,9 +309,13 @@ export function DeleteRecord({
           <DialogTitle>{label}?</DialogTitle>
           <DialogDescription>
             {kind === "project"
-              ? "Объект и все его задачи исчезнут из списков. История сохранится в базе."
-              : "Задача исчезнет из списков. История сохранится в базе."}{" "}
-            Восстановление через интерфейс недоступно.
+              ? t(
+                  "Объект и все его задачи исчезнут из списков. История сохранится в базе."
+                )
+              : t(
+                  "Задача исчезнет из списков. История сохранится в базе."
+                )}{" "}
+            {t("Восстановление через интерфейс недоступно.")}{" "}
           </DialogDescription>
         </DialogHeader>
         <ErrorNotice>{error}</ErrorNotice>
@@ -313,14 +325,14 @@ export function DeleteRecord({
             disabled={busy}
             onClick={() => setOpen(false)}
           >
-            Отмена
+            {t("Отмена")}{" "}
           </Button>
           <Button
             variant="destructive"
             disabled={busy}
             onClick={() => void remove()}
           >
-            {busy ? "Удаляем…" : label}
+            {busy ? t("Удаляем…") : label}
           </Button>
         </div>
       </DialogContent>
